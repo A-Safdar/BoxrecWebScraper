@@ -14,12 +14,6 @@ class WebDriver:
 
     address :   str
                 The url of the website to be scraped
-    username:   str
-                Username for account on the website
-    password:   str
-                Password for account on the website
-    driver:     webdriver
-                Instance of the webdriver itself
     '''
     """
 
