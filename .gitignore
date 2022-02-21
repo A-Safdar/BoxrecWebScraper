@@ -1,5 +1,5 @@
 # Ignore user credentials file
-/credentials.json
+/config.json
 # Ignore specific file types that are generated once the scraper is ran
 *.csv
 *.log
