@@ -25,14 +25,14 @@ class WebDriver:
         self.driver.delete_all_cookies()
         self.configuration_path = configuration_path
 
-        # Required attributes when initialising
-        scraper_config = self.__get_scraper_settings()
-        self.address = scraper_config["url"]
-        self.username = scraper_config["username"]
-        self.password = scraper_config["password"]
+        # Assign required attributes when initialising
+        self.__scraper_config = self.__get_scraper_settings()
+        self.__address = self.__scraper_config["url"]
+        self.__username = self.__scraper_config["username"]
+        self.__password = self.__scraper_config["password"]
 
         # Load the url
-        self.driver.get(self.address)
+        self.driver.get(self.__address)
 
         # Attributes used to handle the basic rankings table
         self.basic_links_list = []
@@ -105,8 +105,8 @@ class WebDriver:
 
         # Enter username and passwords into fields and click login
         # TODO: ADD SUPPORT FOR GETTING CREDENTIALS FROM JSON
-        form_username.send_keys(self.username)
-        form_password.send_keys(self.password)
+        form_username.send_keys(self.__username)
+        form_password.send_keys(self.__password)
         form_submit.click()
 
     def load_rankings_page(self):
@@ -211,7 +211,7 @@ class WebDriver:
 
 
 if __name__ == "__main__":
-    scraper = WebDriver(configuration_path="credentials.json")
+    scraper = WebDriver(configuration_path="config.json")
     sleep(2)
     scraper.login()
     sleep(2)
@@ -223,3 +223,7 @@ if __name__ == "__main__":
     scraper.build_basic_information_lists()
     scraper.create_basic_info_dataframe()
     scraper.write_dataframe_to_csv()
+
+
+# TODO: Add method to class which retrieves a profile picture of each fighter
+# TODO: Add method which generates a v4 UUID for each entry in the dataframe
