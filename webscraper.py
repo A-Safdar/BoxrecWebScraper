@@ -5,6 +5,7 @@ from time import sleep
 import json
 import pandas as pd
 import uuid
+import os
 
 
 class WebDriver:
@@ -51,6 +52,7 @@ class WebDriver:
         self.basic_stance_list = []
         self.basic_residence_list = []
         self.basic_uuid_list = []
+        self.basic_rankings_info = {}
         self.rankings_table = None
 
         # Utility attributes used throughout the class
@@ -204,7 +206,7 @@ class WebDriver:
         """
         Method used to build the panda dataframe based on the data that has been scraped
         """
-        basic_rankings_info = {
+        self.basic_rankings_info = {
             "Ranking": self.basic_ranking_list,
             "UUID": self.basic_uuid_list,
             "BoxerId": self.basic_more_details,
@@ -216,7 +218,7 @@ class WebDriver:
             "Residence": self.basic_residence_list,
         }
 
-        self.rankings_table = pd.DataFrame.from_dict(basic_rankings_info)
+        self.rankings_table = pd.DataFrame.from_dict(self.basic_rankings_info)
         self.rankings_table.set_index("Ranking", inplace=True)
 
     def write_dataframe_to_csv(self):
@@ -224,6 +226,13 @@ class WebDriver:
         Method used to create a csv file of all the data that was scraped
         """
         self.rankings_table.to_csv("test.csv")
+
+    def write_raw_data_to_folder(self):
+        if not os.path.exists("raw_data"):
+            os.mkdir("raw_data")
+
+        with open("raw_data/data.json", "w") as fp:
+            json.dump(self.basic_rankings_info, fp)
 
 
 if __name__ == "__main__":
@@ -239,6 +248,7 @@ if __name__ == "__main__":
     scraper.build_basic_information_lists()
     scraper.create_basic_info_dataframe()
     scraper.write_dataframe_to_csv()
+    scraper.write_raw_data_to_folder()
 
 
 # TODO: Add method to class which retrieves a profile picture of each fighter
