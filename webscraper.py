@@ -1,8 +1,10 @@
+from numpy import number
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from time import sleep
 import json
 import pandas as pd
+import uuid
 
 
 class WebDriver:
@@ -31,6 +33,9 @@ class WebDriver:
         self.__username = self.__scraper_config["username"]
         self.__password = self.__scraper_config["password"]
 
+        # Initialise any private variables
+        self.__page_links = []
+
         # Load the url
         self.driver.get(self.__address)
 
@@ -45,7 +50,7 @@ class WebDriver:
         self.basic_record_list = []
         self.basic_stance_list = []
         self.basic_residence_list = []
-        self.__page_links = []
+        self.basic_uuid_list = []
         self.rankings_table = None
 
         # Utility attributes used throughout the class
@@ -81,6 +86,13 @@ class WebDriver:
         table_rows = ratings_table.find_elements(By.TAG_NAME, "tr")
         for row in table_rows:
             self.table_row_data.append(row.find_elements(By.TAG_NAME, "td"))
+
+    def __generate_uuid(self):
+        """
+        PRIVATE method used to generate a v4 UUID for each entry in the data
+        """
+        unique_identifier = uuid.uuid4()
+        self.basic_uuid_list.append(str(unique_identifier))
 
     def accept_cookies(self):
         """
@@ -151,6 +163,8 @@ class WebDriver:
                 for count, data in enumerate(row):
                     if count == 0:
                         if bool(data.text):
+                            # Generate a uuid for each row
+                            self.__generate_uuid()
                             self.basic_ranking_list.append(data.text)
 
                     elif count == 1:
@@ -191,8 +205,9 @@ class WebDriver:
         Method used to build the panda dataframe based on the data that has been scraped
         """
         basic_rankings_info = {
-            "Id": self.basic_more_details,
             "Ranking": self.basic_ranking_list,
+            "UUID": self.basic_uuid_list,
+            "BoxerId": self.basic_more_details,
             "Name": self.basic_name_list,
             "Division": self.basic_division_list,
             "Age": self.basic_age_list,
@@ -202,6 +217,7 @@ class WebDriver:
         }
 
         self.rankings_table = pd.DataFrame.from_dict(basic_rankings_info)
+        self.rankings_table.set_index("Ranking", inplace=True)
 
     def write_dataframe_to_csv(self):
         """
@@ -219,11 +235,11 @@ if __name__ == "__main__":
     sleep(2)
     scraper.load_rankings_page()
     sleep(2)
-    scraper.build_list_of_page_links(3)
+    scraper.build_list_of_page_links(1)
     scraper.build_basic_information_lists()
     scraper.create_basic_info_dataframe()
     scraper.write_dataframe_to_csv()
 
 
 # TODO: Add method to class which retrieves a profile picture of each fighter
-# TODO: Add method which generates a v4 UUID for each entry in the dataframe
+# TODO: Further abstract the class so that the config.json can be configured to scrape different websites
