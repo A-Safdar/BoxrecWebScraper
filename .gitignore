@@ -3,3 +3,5 @@
 # Ignore specific file types that are generated once the scraper is ran
 *.csv
 *.log
+# Ignore raw_data folder to save space in repo
+/raw_data/*
