@@ -4,4 +4,4 @@
 *.csv
 *.log
 # Ignore raw_data folder to save space in repo
-/raw_data/*
+raw_data/

@@ -41,18 +41,6 @@ class WebDriver:
         self.driver.get(self.__address)
 
         # Attributes used to handle the basic rankings table
-        self.basic_links_list = []
-        self.basic_ranking_list = []
-        self.basic_more_details = []
-        self.basic_name_list = []
-        self.basic_points_list = []
-        self.basic_division_list = []
-        self.basic_age_list = []
-        self.basic_record_list = []
-        self.basic_stance_list = []
-        self.basic_residence_list = []
-        self.basic_uuid_list = []
-        self.basic_rankings_info = {}
         self.rankings_dict = {}
         self.rankings_table = None
 
@@ -147,14 +135,14 @@ class WebDriver:
         template_url = "https://boxrec.com/en/ratings?offset="
 
         for page in lst_page_offset:
-            self.basic_links_list.append(f"{template_url}{page}")
+            self.__page_links.append(f"{template_url}{page}")
 
     def build_rankings_dictionary(self):
         """
         Method used to begin scraping through the website and through different pages to create a dictionary
         """
         dict_entry_count = 0
-        for page_number, link in enumerate(self.basic_links_list):
+        for page_number, link in enumerate(self.__page_links):
             # First page at this point is already loaded so we can ignore
             if page_number != 0:
                 self.__load_page(link)
