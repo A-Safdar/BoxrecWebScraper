@@ -99,6 +99,7 @@ class WebDriver:
         # Find and click login button
         login_button = self.driver.find_element(By.LINK_TEXT, "login")
         login_button.click()
+        sleep(2)
 
         # Find username, password and submit form elements
         form_username = self.driver.find_element(By.ID, "username")
