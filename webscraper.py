@@ -92,12 +92,8 @@ class WebDriver:
 
     def __generate_uuid(self):
         """
-        PRIVATE method used to generate a v4 UUID for each entry in the data
+        PRIVATE method used to generate uuid for each entry
         """
-        unique_identifier = uuid.uuid4()
-        self.basic_uuid_list.append(str(unique_identifier))
-
-    def __generate_uuid_dict(self):
         return str(uuid.uuid4())
 
     def accept_cookies(self):
@@ -155,7 +151,7 @@ class WebDriver:
 
     def build_rankings_dictionary(self):
         """
-        Method used to begin scraping through the website and through different pages
+        Method used to begin scraping through the website and through different pages to create a dictionary
         """
         dict_entry_count = 0
         for page_number, link in enumerate(self.basic_links_list):
@@ -166,7 +162,10 @@ class WebDriver:
             # Process current pages data
             self.__extract_current_page_data()
 
+            # Go through each row in the data extracted from the table
             for row in self.table_row_data:
+                # Initialise an empty dict
+                # Not necessary but done so that the structure is fixed
                 current_fighter = {
                     "Rank": None,
                     "BoxerId": None,
@@ -181,11 +180,12 @@ class WebDriver:
                     "Residence": None,
                     "UUID": None,
                 }
+                # Go through each datapoint in the row being processed
                 for count, data in enumerate(row):
                     if count == 0:
                         if bool(data.text):
                             # Generate a uuid for each row
-                            current_fighter["UUID"] = self.__generate_uuid_dict()
+                            current_fighter["UUID"] = self.__generate_uuid()
                             current_fighter["Rank"] = data.text
 
                     elif count == 1:
@@ -263,4 +263,5 @@ if __name__ == "__main__":
 
 
 # TODO: Add method to class which retrieves a profile picture of each fighter
+# TODO: Refactor the build_rankings_dictionary() method to be less computationally expensive as it currently has nested for loops
 # TODO: Further abstract the class so that the config.json can be configured to scrape different websites
