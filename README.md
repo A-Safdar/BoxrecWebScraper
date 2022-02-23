@@ -3,9 +3,9 @@
 Currently this project only supports Boxrec
 TODO: Add support for different websites
 
-## NOTE: Project will not work without credentials for Boxrec
+## NOTE: Project will not work without a config file for the scraper
 
--  Please ensure that within the root director of the project, you add a json file called `credentials.json`
+-  Please ensure that within the root director of the project, you add a json file called `config.json`
 -  Within the file add the following structure:
 
 ```
