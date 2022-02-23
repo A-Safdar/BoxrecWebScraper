@@ -53,6 +53,7 @@ class WebDriver:
         self.basic_residence_list = []
         self.basic_uuid_list = []
         self.basic_rankings_info = {}
+        self.rankings_dict = {}
         self.rankings_table = None
 
         # Utility attributes used throughout the class
@@ -95,6 +96,9 @@ class WebDriver:
         """
         unique_identifier = uuid.uuid4()
         self.basic_uuid_list.append(str(unique_identifier))
+
+    def __generate_uuid_dict(self):
+        return str(uuid.uuid4())
 
     def accept_cookies(self):
         """
@@ -149,10 +153,11 @@ class WebDriver:
         for page in lst_page_offset:
             self.basic_links_list.append(f"{template_url}{page}")
 
-    def build_basic_information_lists(self):
+    def build_rankings_dictionary(self):
         """
         Method used to begin scraping through the website and through different pages
         """
+        dict_entry_count = 0
         for page_number, link in enumerate(self.basic_links_list):
             # First page at this point is already loaded so we can ignore
             if page_number != 0:
@@ -162,38 +167,56 @@ class WebDriver:
             self.__extract_current_page_data()
 
             for row in self.table_row_data:
+                current_fighter = {
+                    "Rank": None,
+                    "BoxerId": None,
+                    "Name": None,
+                    "Points": None,
+                    "Division": None,
+                    "Age": None,
+                    "Wins": None,
+                    "Draws": None,
+                    "Losses": None,
+                    "Stance": None,
+                    "Residence": None,
+                    "UUID": None,
+                }
                 for count, data in enumerate(row):
                     if count == 0:
                         if bool(data.text):
                             # Generate a uuid for each row
-                            self.__generate_uuid()
-                            self.basic_ranking_list.append(data.text)
+                            current_fighter["UUID"] = self.__generate_uuid_dict()
+                            current_fighter["Rank"] = data.text
 
                     elif count == 1:
-                        self.basic_name_list.append(data.text)
-                        more_details_link = data.find_element(By.TAG_NAME, "a")
-                        self.basic_more_details.append(more_details_link.get_attribute("href"))
+                        current_fighter["Name"] = data.text
+                        more_details_element = data.find_element(By.TAG_NAME, "a")
+                        more_details_link = more_details_element.get_attribute("href")
+                        current_fighter["BoxerId"] = more_details_link.split("/")[-1]
 
                     elif count == 2:
-                        self.basic_points_list.append(data.text)
+                        current_fighter["Points"] = data.text
 
                     elif count == 4:
-                        self.basic_division_list.append(data.text)
+                        current_fighter["Division"] = data.text
 
                     elif count == 5:
-                        self.basic_age_list.append(data.text)
+                        current_fighter["Age"] = data.text
 
                     elif count == 6:
-                        self.basic_record_list.append(data.text)
+                        current_fighter["Wins"] = data.text.split()[0]
+                        current_fighter["Draws"] = data.text.split()[1]
+                        current_fighter["Losses"] = data.text.split()[2]
 
                     elif count == 8:
-                        self.basic_stance_list.append(data.text)
+                        current_fighter["Stance"] = data.text
 
                     elif count == 9:
-                        self.basic_residence_list.append(data.text)
+                        current_fighter["Residence"] = data.text
 
-        # Once all data has been retrieved, generate a unique id for each entry
-        self.create_id_from_link()
+                if any(current_fighter.values()):
+                    self.rankings_dict[f"{dict_entry_count}"] = current_fighter
+                    dict_entry_count += 1
 
     def create_id_from_link(self):
         """
@@ -206,20 +229,8 @@ class WebDriver:
         """
         Method used to build the panda dataframe based on the data that has been scraped
         """
-        self.basic_rankings_info = {
-            "Ranking": self.basic_ranking_list,
-            "UUID": self.basic_uuid_list,
-            "BoxerId": self.basic_more_details,
-            "Name": self.basic_name_list,
-            "Division": self.basic_division_list,
-            "Age": self.basic_age_list,
-            "Record": self.basic_record_list,
-            "Stance": self.basic_stance_list,
-            "Residence": self.basic_residence_list,
-        }
-
-        self.rankings_table = pd.DataFrame.from_dict(self.basic_rankings_info)
-        self.rankings_table.set_index("Ranking", inplace=True)
+        self.rankings_table = pd.DataFrame.from_dict(self.rankings_dict, orient="index")
+        self.rankings_table.set_index("Rank", inplace=True)
 
     def write_dataframe_to_csv(self):
         """
@@ -232,7 +243,7 @@ class WebDriver:
             os.mkdir("raw_data")
 
         with open("raw_data/data.json", "w") as fp:
-            json.dump(self.basic_rankings_info, fp)
+            json.dump(self.rankings_dict, fp)
 
 
 if __name__ == "__main__":
@@ -245,7 +256,7 @@ if __name__ == "__main__":
     scraper.load_rankings_page()
     sleep(2)
     scraper.build_list_of_page_links(1)
-    scraper.build_basic_information_lists()
+    scraper.build_rankings_dictionary()
     scraper.create_basic_info_dataframe()
     scraper.write_dataframe_to_csv()
     scraper.write_raw_data_to_folder()
