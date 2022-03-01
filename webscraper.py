@@ -1,4 +1,3 @@
-from numpy import number
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from time import sleep
@@ -46,6 +45,7 @@ class WebDriver:
 
         # Utility attributes used throughout the class
         self.table_row_data = []
+        self.table_data = []
 
     def __get_scraper_settings(self):
         """
@@ -72,11 +72,17 @@ class WebDriver:
         PRIVATE method used to get all the relevant data within a specific page
         """
         # Clear the table row data array every time this method is called
-        self.table_row_data = []
+        self.table_data = []
         ratings_table = self.driver.find_element(By.ID, "ratingsResults")
-        table_rows = ratings_table.find_elements(By.TAG_NAME, "tr")
-        for row in table_rows:
-            self.table_row_data.append(row.find_elements(By.TAG_NAME, "td"))
+        self.table_data = ratings_table.find_elements(By.TAG_NAME, "td")
+        self.__clean_tabular_data()
+
+    def __clean_tabular_data(self):
+        """
+        PRIVATE method used to remove the row in the table that contains an advert
+        """
+        # Every 250th td element in the rankings table is an advert which we do not need
+        self.table_data.pop(250)
 
     def __generate_uuid(self):
         """
@@ -107,7 +113,6 @@ class WebDriver:
         form_submit = self.driver.find_element(By.CLASS_NAME, "submitButton")
 
         # Enter username and passwords into fields and click login
-        # TODO: ADD SUPPORT FOR GETTING CREDENTIALS FROM JSON
         form_username.send_keys(self.__username)
         form_password.send_keys(self.__password)
         form_submit.click()
@@ -138,23 +143,79 @@ class WebDriver:
         for page in lst_page_offset:
             self.__page_links.append(f"{template_url}{page}")
 
-    def build_rankings_dictionary(self):
+    def load_pages_and_extract_data(self):
         """
-        Method used to begin scraping through the website and through different pages to create a dictionary
+        Method used to go through each page requested and extract the data into a dictionary
         """
-        dict_entry_count = 0
+        # Initialise dictionary entry count public variable
+        self.dict_entry_count = 1
+        # Go through each page requested, extract the data and then build the dict
         for page_number, link in enumerate(self.__page_links):
             # First page at this point is already loaded so we can ignore
             if page_number != 0:
                 self.__load_page(link)
-
             # Process current pages data
             self.__extract_current_page_data()
+            # Build dictionary
+            self.__build_rankings_dictionary_refactored()
 
-            # Go through each row in the data extracted from the table
-            for row in self.table_row_data:
-                # Initialise an empty dict
-                # Not necessary but done so that the structure is fixed
+    def __build_rankings_dictionary_refactored(self):
+        """
+        PRIVATE method used to build dictionary containing the data extracted
+        """
+        # Initialise current_fighter to ensure structure is the way I want
+        current_fighter = {
+            "Rank": None,
+            "BoxerId": None,
+            "Name": None,
+            "Points": None,
+            "Division": None,
+            "Age": None,
+            "Wins": None,
+            "Draws": None,
+            "Losses": None,
+            "Stance": None,
+            "Residence": None,
+            "UUID": None,
+        }
+        # Go through each datapoint extracted and build up a profile for ONE fighter
+        for count, data in enumerate(self.table_data):
+            if count % 10 == 0:
+                if bool(data.text):
+                    # Generate a uuid for each row
+                    current_fighter["UUID"] = self.__generate_uuid()
+                    current_fighter["Rank"] = data.text
+
+            elif count % 10 == 1:
+                current_fighter["Name"] = data.text
+                more_details_element = data.find_element(By.TAG_NAME, "a")
+                more_details_link = more_details_element.get_attribute("href")
+                current_fighter["BoxerId"] = more_details_link.split("/")[-1]
+
+            elif count % 10 == 2:
+                current_fighter["Points"] = data.text
+
+            elif count % 10 == 4:
+                current_fighter["Division"] = data.text
+
+            elif count % 10 == 5:
+                current_fighter["Age"] = data.text
+
+            elif count % 10 == 6:
+                current_fighter["Wins"] = data.text.split()[0]
+                current_fighter["Draws"] = data.text.split()[1]
+                current_fighter["Losses"] = data.text.split()[2]
+
+            elif count % 10 == 8:
+                current_fighter["Stance"] = data.text
+
+            elif count % 10 == 9:
+                current_fighter["Residence"] = data.text
+
+                if any(current_fighter.values()):
+                    self.rankings_dict[f"{self.dict_entry_count}"] = current_fighter
+                    self.dict_entry_count += 1
+
                 current_fighter = {
                     "Rank": None,
                     "BoxerId": None,
@@ -169,43 +230,6 @@ class WebDriver:
                     "Residence": None,
                     "UUID": None,
                 }
-                # Go through each datapoint in the row being processed
-                for count, data in enumerate(row):
-                    if count == 0:
-                        if bool(data.text):
-                            # Generate a uuid for each row
-                            current_fighter["UUID"] = self.__generate_uuid()
-                            current_fighter["Rank"] = data.text
-
-                    elif count == 1:
-                        current_fighter["Name"] = data.text
-                        more_details_element = data.find_element(By.TAG_NAME, "a")
-                        more_details_link = more_details_element.get_attribute("href")
-                        current_fighter["BoxerId"] = more_details_link.split("/")[-1]
-
-                    elif count == 2:
-                        current_fighter["Points"] = data.text
-
-                    elif count == 4:
-                        current_fighter["Division"] = data.text
-
-                    elif count == 5:
-                        current_fighter["Age"] = data.text
-
-                    elif count == 6:
-                        current_fighter["Wins"] = data.text.split()[0]
-                        current_fighter["Draws"] = data.text.split()[1]
-                        current_fighter["Losses"] = data.text.split()[2]
-
-                    elif count == 8:
-                        current_fighter["Stance"] = data.text
-
-                    elif count == 9:
-                        current_fighter["Residence"] = data.text
-
-                if any(current_fighter.values()):
-                    self.rankings_dict[f"{dict_entry_count}"] = current_fighter
-                    dict_entry_count += 1
 
     def create_id_from_link(self):
         """
@@ -244,13 +268,11 @@ if __name__ == "__main__":
     sleep(2)
     scraper.load_rankings_page()
     sleep(2)
-    scraper.build_list_of_page_links(1)
-    scraper.build_rankings_dictionary()
+    scraper.build_list_of_page_links(2)
+    scraper.load_pages_and_extract_data()
     scraper.create_basic_info_dataframe()
     scraper.write_dataframe_to_csv()
     scraper.write_raw_data_to_folder()
 
-
 # TODO: Add method to class which retrieves a profile picture of each fighter
-# TODO: Refactor the build_rankings_dictionary() method to be less computationally expensive as it currently has nested for loops
 # TODO: Further abstract the class so that the config.json can be configured to scrape different websites
