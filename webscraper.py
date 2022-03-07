@@ -47,6 +47,37 @@ class WebDriver:
         self.table_row_data = []
         self.table_data = []
 
+    def __get_selenium_by_attribute(self, by: str):
+        """
+        PRIVATE method which returns the selenium By attribute based on what the 'by' object in the json config
+
+        '''
+        Attributes
+        ----------
+
+        by: str
+            The by type extracted from the json config file
+        '''
+        """
+        if by == "ID":
+            return By.ID
+        elif by == "CLASS_NAME":
+            return By.CLASS_NAME
+        elif by == "CSS_SELECTOR":
+            return By.CSS_SELECTOR
+        elif by == "LINK_TEXT":
+            return By.LINK_TEXT
+        elif by == "NAME":
+            return By.NAME
+        elif by == "PARTIAL_LINK_TEXT":
+            return By.PARTIAL_LINK_TEXT
+        elif by == "TAG_NAME":
+            return By.TAG_NAME
+        elif by == "XPATH":
+            return By.XPATH
+        else:
+            return None
+
     def __get_scraper_settings(self):
         """
         PRIVATE method used to extract relevant settings from the json config file
@@ -94,8 +125,14 @@ class WebDriver:
         """
         Method to find the manage cookies and accept cookies buttons and then click the button
         """
-        cookies_container = self.driver.find_element(By.XPATH, '//div[@id="qc-cmp2-ui"]')
-        accept_button = cookies_container.find_element(By.XPATH, '//button[contains(@class, "css-1my9mvs")]')
+        cookies_container = self.driver.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["cookies"]["container"]["by"]),
+            self.__scraper_config["cookies"]["container"]["text"],
+        )
+        accept_button = cookies_container.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["cookies"]["button"]["by"]),
+            self.__scraper_config["cookies"]["button"]["text"],
+        )
         accept_button.click()
 
     def login(self):
@@ -103,14 +140,26 @@ class WebDriver:
         Method to navigate to the login page and then fill in the login form with user credentials
         """
         # Find and click login button
-        login_button = self.driver.find_element(By.LINK_TEXT, "login")
+        login_button = self.driver.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["loginButton"]["by"]),
+            self.__scraper_config["loginButton"]["text"],
+        )
         login_button.click()
         sleep(2)
 
         # Find username, password and submit form elements
-        form_username = self.driver.find_element(By.ID, "username")
-        form_password = self.driver.find_element(By.ID, "password")
-        form_submit = self.driver.find_element(By.CLASS_NAME, "submitButton")
+        form_username = self.driver.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["usernameEntry"]["by"]),
+            self.__scraper_config["loginForm"]["usernameEntry"]["text"],
+        )
+        form_password = self.driver.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["passwordEntry"]["by"]),
+            self.__scraper_config["loginForm"]["passwordEntry"]["text"],
+        )
+        form_submit = self.driver.find_element(
+            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["submitCredentials"]["by"]),
+            self.__scraper_config["loginForm"]["submitCredentials"]["text"],
+        )
 
         # Enter username and passwords into fields and click login
         form_username.send_keys(self.__username)
@@ -157,9 +206,9 @@ class WebDriver:
             # Process current pages data
             self.__extract_current_page_data()
             # Build dictionary
-            self.__build_rankings_dictionary_refactored()
+            self.__build_rankings_dictionary()
 
-    def __build_rankings_dictionary_refactored(self):
+    def __build_rankings_dictionary(self):
         """
         PRIVATE method used to build dictionary containing the data extracted
         """
