@@ -20,25 +20,25 @@ TODO: Add support for different websites
    "loginForm": {
       "usernameEntry": {
          "by": "<ENTER-BY-ATTRIBUTE-NAME>",
-      "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
+         "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
       },
       "passwordEntry": {
          "by": "<ENTER-BY-ATTRIBUTE-NAME>",
-      "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
+         "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
       },
       "submitCredentials": {
          "by": "<ENTER-BY-ATTRIBUTE-NAME>",
-      "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
+         "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
       }
    },
    "cookies": {
       "container": {
          "by": "<ENTER-BY-ATTRIBUTE-NAME>",
-      "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
+         "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
       },
       "button": {
          "by": "<ENTER-BY-ATTRIBUTE-NAME>",
-      "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
+         "text": "<ENTER-BY-ATTRIBUTE-VALUE>"
       }
    }
 }
