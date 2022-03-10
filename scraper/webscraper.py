@@ -11,89 +11,49 @@ class WebDriver:
     """
     The webdriver class is used to fetch a website, navigate through it and to find elements inside it
 
-    '''
-    Attributes
-    ----------
+    Attributes:
+        url (str): The url of the website to scrape
 
-    configuration_path :    str
-                            The path for the json file which contains the url, username and password
-    '''
+        username (str): OPTIONAL parameter for username in the website login credentials
+
+        password (str): OPTIONAL parameter for password in the website login credentials
+
+    Returns:
+        None
     """
 
-    def __init__(self, configuration_path: str):
+    def __init__(self, url: str, username: str = "", password: str = ""):
         # Initialise a webdriver when class is called
         # Delete all cookies
         self.driver = webdriver.Firefox()
         self.driver.delete_all_cookies()
-        self.configuration_path = configuration_path
 
-        # Assign required attributes when initialising
-        self.__scraper_config = self.__get_scraper_settings()
-        self.__address = self.__scraper_config["url"]
-        self.__username = self.__scraper_config["username"]
-        self.__password = self.__scraper_config["password"]
-
-        # Initialise any private variables
-        self.__page_links = []
+        self.__address = url
+        self.__username = username
+        self.__password = password
 
         # Load the url
         self.driver.get(self.__address)
+
+        # Initialise any private variables
+        self.__page_links = []
 
         # Attributes used to handle the basic rankings table
         self.rankings_dict = {}
         self.rankings_table = None
 
         # Utility attributes used throughout the class
-        self.table_row_data = []
         self.table_data = []
-
-    def __get_selenium_by_attribute(self, by: str):
-        """
-        PRIVATE method which returns the selenium By attribute based on what the 'by' object in the json config
-
-        '''
-        Attributes
-        ----------
-
-        by: str
-            The by type extracted from the json config file
-        '''
-        """
-        if by == "ID":
-            return By.ID
-        elif by == "CLASS_NAME":
-            return By.CLASS_NAME
-        elif by == "CSS_SELECTOR":
-            return By.CSS_SELECTOR
-        elif by == "LINK_TEXT":
-            return By.LINK_TEXT
-        elif by == "NAME":
-            return By.NAME
-        elif by == "PARTIAL_LINK_TEXT":
-            return By.PARTIAL_LINK_TEXT
-        elif by == "TAG_NAME":
-            return By.TAG_NAME
-        elif by == "XPATH":
-            return By.XPATH
-        else:
-            return None
-
-    def __get_scraper_settings(self):
-        """
-        PRIVATE method used to extract relevant settings from the json config file
-        """
-        with open(self.configuration_path, "r") as f:
-            return json.load(f)
 
     def __load_page(self, url: str):
         """
         PRIVATE method used to load a page with a specific url and wait 2 seconds once the request is made
-        '''
-        Attributes
-        ----------
 
-        url:    str
-                The url of the page to load
+        Args:
+            url (str): The url of the website/page to load
+
+        Returns:
+            None
         """
         self.driver.get(url)
         sleep(2)
@@ -101,6 +61,12 @@ class WebDriver:
     def __extract_current_page_data(self):
         """
         PRIVATE method used to get all the relevant data within a specific page
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         # Clear the table row data array every time this method is called
         self.table_data = []
@@ -111,6 +77,12 @@ class WebDriver:
     def __clean_tabular_data(self):
         """
         PRIVATE method used to remove the row in the table that contains an advert
+        
+        Args:
+            None
+
+        Returns:
+            None
         """
         # Every 250th td element in the rankings table is an advert which we do not need
         self.table_data.pop(250)
@@ -118,73 +90,115 @@ class WebDriver:
     def __generate_uuid(self):
         """
         PRIVATE method used to generate uuid for each entry
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         return str(uuid.uuid4())
 
-    def accept_cookies(self):
+    def accept_cookies(
+        self, container_by: By, container_locator_string: str, button_by: By, button_locator_string: str
+    ):
         """
         Method to find the manage cookies and accept cookies buttons and then click the button
+
+        Args:
+            container_by (By): Denotes the type of locator you'll use (e.g. By.ID or By.CLASS_NAME) to find the cookies container
+            
+            container_locator_string (str): The value for the string to locate the cookies container
+            
+            button_by (By): Denotes the type of locator you'll use to find the accept cookies button
+            
+            button_locator_string (str): The value for the string to locate the cookies container
+
+        Returns:
+            None
         """
-        cookies_container = self.driver.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["cookies"]["container"]["by"]),
-            self.__scraper_config["cookies"]["container"]["text"],
-        )
-        accept_button = cookies_container.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["cookies"]["button"]["by"]),
-            self.__scraper_config["cookies"]["button"]["text"],
-        )
+        cookies_container = self.driver.find_element(container_by, container_locator_string)
+        accept_button = cookies_container.find_element(button_by, button_locator_string)
         accept_button.click()
 
-    def login(self):
+    def load_login_page(self, by: By, locator_string: str):
         """
-        Method to navigate to the login page and then fill in the login form with user credentials
+        Method used to load the login page
+
+        Args:
+            by (By): Denotes the type of locator you'll use (e.g. By.ID or By.XPATH etc) to find login button/link
+            
+            locator_string (str): The value for the string to locate the login button/link
+
+        Returns:
+            None
         """
-        # Find and click login button
-        login_button = self.driver.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["loginButton"]["by"]),
-            self.__scraper_config["loginButton"]["text"],
-        )
+        login_button = self.driver.find_element(by, locator_string)
         login_button.click()
         sleep(2)
 
+    def submit_login_credentials(
+        self,
+        username_field_by: By,
+        username_field_locator: str,
+        password_field_by: By,
+        password_field_locator: str,
+        submit_button_by: By,
+        submit_button_locator: str,
+    ):
+        """
+        Method used to fill in login form and submit credentials
+
+        Args:
+            username_field_by (By): Denotes the type of locator you'll use (e.g. By.ID or By.XPATH etc) to find username field
+
+            username_field_locator (str): The value for the string to locate the username field
+
+            password_field_by (By): Denotes the type of locator you'll use (e.g. By.ID or By.XPATH etc) to find password field
+
+            password_field_locator (str): The value for the string to locate the password field
+
+            submit_button_by (By): Denotes the type of locator you'll use (e.g. By.ID or By.XPATH etc) to find submit button
+
+            submit_button_locator (str): The value for the string to locate the submit button
+
+        Returns:
+            None
+        """
         # Find username, password and submit form elements
-        form_username = self.driver.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["usernameEntry"]["by"]),
-            self.__scraper_config["loginForm"]["usernameEntry"]["text"],
-        )
-        form_password = self.driver.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["passwordEntry"]["by"]),
-            self.__scraper_config["loginForm"]["passwordEntry"]["text"],
-        )
-        form_submit = self.driver.find_element(
-            self.__get_selenium_by_attribute(self.__scraper_config["loginForm"]["submitCredentials"]["by"]),
-            self.__scraper_config["loginForm"]["submitCredentials"]["text"],
-        )
+        form_username = self.driver.find_element(username_field_by, username_field_locator)
+        form_password = self.driver.find_element(password_field_by, password_field_locator,)
+        form_submit = self.driver.find_element(submit_button_by, submit_button_locator,)
 
         # Enter username and passwords into fields and click login
         form_username.send_keys(self.__username)
         form_password.send_keys(self.__password)
         form_submit.click()
 
-    def load_rankings_page(self):
+    def navigate_to_page(self, by: By, page_button_locator: str):
         """
         Method to navigate to the rankings page
+
+        Args:
+            by (By): Denotes the type of locator you'll use to find button/link to the page (e.g. By.ID or By.XPATH etc.)
+
+            page_button_locator (str): The value for the string to locate the page link/button
+
+        Returns:
+            None
         """
-        ratings_link = self.driver.find_element(By.LINK_TEXT, "ratings")
-        ratings_link.click()
+        page_link = self.driver.find_element(by, page_button_locator)
+        page_link.click()
 
     def build_list_of_page_links(self, number_of_pages: int):
         """
         Method is used to generate a list containing the links to each page for the number of pages required
 
-        '''
-        Attributes
-        ----------
+        Args:
+            number_of_pages (int): Denotes the number of pages you want to generate the links for
 
-        number_of_pages :   int
-                            The number of required pages
-
-        '''
+        Returns:
+            None
         """
         lst_page_offset = range(0, number_of_pages * 50, 50)
         template_url = "https://boxrec.com/en/ratings?offset="
@@ -195,6 +209,12 @@ class WebDriver:
     def load_pages_and_extract_data(self):
         """
         Method used to go through each page requested and extract the data into a dictionary
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         # Initialise dictionary entry count public variable
         self.dict_entry_count = 1
@@ -211,6 +231,12 @@ class WebDriver:
     def __build_rankings_dictionary(self):
         """
         PRIVATE method used to build dictionary containing the data extracted
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         # Initialise current_fighter to ensure structure is the way I want
         current_fighter = {
@@ -280,16 +306,15 @@ class WebDriver:
                     "UUID": None,
                 }
 
-    def create_id_from_link(self):
-        """
-        Method used to create a unique id for each entry in the table
-        """
-        for count, link in enumerate(self.basic_more_details):
-            self.basic_more_details[count] = self.basic_more_details[count].split("/")[-1]
-
     def create_basic_info_dataframe(self):
         """
         Method used to build the panda dataframe based on the data that has been scraped
+
+        Args:
+            None
+
+        Returns:
+            None
         """
         self.rankings_table = pd.DataFrame.from_dict(self.rankings_dict, orient="index")
         self.rankings_table.set_index("Rank", inplace=True)
@@ -297,31 +322,31 @@ class WebDriver:
     def write_dataframe_to_csv(self):
         """
         Method used to create a csv file of all the data that was scraped
+
+        Args:
+            None
+
+        Returns:
+            None
         """
-        self.rankings_table.to_csv("test.csv")
+        self.rankings_table.to_csv("scraper/test.csv")
 
     def write_raw_data_to_folder(self):
-        if not os.path.exists("raw_data"):
-            os.mkdir("raw_data")
+        """
+        Method used to write raw data to a folder
 
-        with open("raw_data/data.json", "w") as fp:
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        if not os.path.exists("scraper/raw_data"):
+            os.mkdir("scraper/raw_data")
+
+        with open("scraper/raw_data/data.json", "w") as fp:
             json.dump(self.rankings_dict, fp)
 
-
-if __name__ == "__main__":
-    scraper = WebDriver(configuration_path="config.json")
-    sleep(2)
-    scraper.login()
-    sleep(2)
-    scraper.accept_cookies()
-    sleep(2)
-    scraper.load_rankings_page()
-    sleep(2)
-    scraper.build_list_of_page_links(2)
-    scraper.load_pages_and_extract_data()
-    scraper.create_basic_info_dataframe()
-    scraper.write_dataframe_to_csv()
-    scraper.write_raw_data_to_folder()
 
 # TODO: Add method to class which retrieves a profile picture of each fighter
 # TODO: Further abstract the class so that the config.json can be configured to scrape different websites
